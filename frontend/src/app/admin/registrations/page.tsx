@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { api } from '@/lib/api';
-import { Registration, RegistrationStatus, Class, Course } from '@/types';
+import { Registration, RegistrationStatus, Class, Course, User } from '@/types';
 
 export default function AdminRegistrationsPage() {
     const [registrations, setRegistrations] = useState<Registration[]>([]);
