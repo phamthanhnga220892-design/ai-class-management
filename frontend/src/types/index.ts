@@ -55,13 +55,10 @@ export enum RegistrationStatus {
 
 export interface Registration {
     _id: string;
-    student: string | User;
+    user: string | User;
     class: string | Class;
+    course: string | Course;
     status: RegistrationStatus;
-    studentName: string;
-    studentPhone: string;
-    parentName: string;
-    parentPhone: string;
     adminNote?: string;
     approvedBy?: string | User;
     approvedAt?: string;

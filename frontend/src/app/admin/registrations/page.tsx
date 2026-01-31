@@ -145,19 +145,25 @@ export default function AdminRegistrationsPage() {
                                 </tr>
                             ) : (
                                 registrations.map((reg) => {
+                                    const user = reg.user as User;
                                     const classData = reg.class as Class;
-                                    if (!classData || !classData.course) return null;
-                                    const courseData = classData.course as Course;
+                                    const course = reg.course as Course;
+
+                                    if (!user || !classData || !course) return null;
+
                                     return (
                                         <tr key={reg._id} className="hover:bg-muted/30 transition-colors">
                                             <td className="px-6 py-4">
                                                 <div>
-                                                    <div className="font-medium text-foreground">{reg.studentName}</div>
-                                                    <div className="text-sm text-muted-foreground">{reg.studentPhone}</div>
+                                                    <div className="font-medium text-foreground">{user.fullName}</div>
+                                                    <div className="text-sm text-muted-foreground">{user.email}</div>
+                                                    {user.phone && (
+                                                        <div className="text-xs text-muted-foreground mt-0.5">{user.phone}</div>
+                                                    )}
                                                 </div>
                                             </td>
                                             <td className="px-6 py-4 text-sm text-foreground">
-                                                {courseData.title}
+                                                {course.title}
                                             </td>
                                             <td className="px-6 py-4 text-sm text-foreground">
                                                 {classData.name}
