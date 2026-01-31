@@ -146,6 +146,7 @@ export default function AdminRegistrationsPage() {
                             ) : (
                                 registrations.map((reg) => {
                                     const classData = reg.class as Class;
+                                    if (!classData || !classData.course) return null;
                                     const courseData = classData.course as Course;
                                     return (
                                         <tr key={reg._id} className="hover:bg-muted/30 transition-colors">

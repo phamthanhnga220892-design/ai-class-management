@@ -112,6 +112,7 @@ export default function CoursesPage() {
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     {registrations.map((registration) => {
                         const classItem = registration.class as Class;
+                        if (!classItem || !classItem.course) return null;
                         const course = classItem.course as Course;
 
                         return (
