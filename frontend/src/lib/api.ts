@@ -38,21 +38,42 @@ async function fetchApi<T>(
         headers['Authorization'] = `Bearer ${token}`;
     }
 
-    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-        ...options,
-        headers,
-    });
 
-    if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
+    try {
+        const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+            ...options,
+            headers,
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            throw new ApiError(
+                response.status,
+                errorData.message || `HTTP ${response.status}: ${response.statusText}`,
+                errorData
+            );
+        }
+
+        return response.json();
+    } catch (error) {
+        // Enhanced error logging for debugging
+        if (error instanceof ApiError) {
+            throw error;
+        }
+
+        // Network errors (CORS, timeout, connection refused, etc.)
+        console.error('Network Error:', {
+            endpoint,
+            apiBaseUrl: API_BASE_URL,
+            error: error instanceof Error ? error.message : 'Unknown error',
+        });
+
         throw new ApiError(
-            response.status,
-            errorData.message || `HTTP ${response.status}: ${response.statusText}`,
-            errorData
+            0,
+            `Network error: ${error instanceof Error ? error.message : 'Failed to connect'}. Check internet connection.`,
+            { originalError: error }
         );
     }
-
-    return response.json();
 }
 
 /**
