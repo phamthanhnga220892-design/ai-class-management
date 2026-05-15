@@ -46,8 +46,14 @@ export default function ProductsPage() {
     const [newFiles, setNewFiles] = useState<File[]>([]);
     const [fileError, setFileError] = useState('');
     const [submitting, setSubmitting] = useState(false);
+    const [successMsg, setSuccessMsg] = useState('');
 
     const fileInputRef = useRef<HTMLInputElement>(null);
+
+    const showSuccess = (msg: string) => {
+        setSuccessMsg(msg);
+        setTimeout(() => setSuccessMsg(''), 3000);
+    };
 
     useEffect(() => {
         fetchProducts();
@@ -157,6 +163,7 @@ export default function ProductsPage() {
             setShowModal(false);
             resetForm();
             fetchProducts();
+            showSuccess(editingProduct ? 'Cập nhật sản phẩm thành công!' : 'Thêm sản phẩm thành công!');
         } catch (err: any) {
             alert(err.message || 'Có lỗi xảy ra');
         } finally {
@@ -169,6 +176,7 @@ export default function ProductsPage() {
         try {
             await api.deleteProduct(id);
             fetchProducts();
+            showSuccess('Xóa sản phẩm thành công!');
         } catch (err: any) {
             alert(err.message || 'Có lỗi xảy ra');
         }
@@ -210,6 +218,12 @@ export default function ProductsPage() {
                     </button>
                 </div>
             </div>
+
+            {successMsg && (
+                <div className="fixed top-4 right-4 z-50 bg-green-500 text-white px-5 py-3 rounded-lg shadow-lg flex items-center gap-2">
+                    ✅ {successMsg}
+                </div>
+            )}
 
             {error && (
                 <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
