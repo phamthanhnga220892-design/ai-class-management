@@ -1,4 +1,4 @@
-import { IsString, IsNotEmpty, MaxLength, IsUrl } from 'class-validator';
+import { IsString, IsNotEmpty, MaxLength, IsUrl, ValidateIf } from 'class-validator';
 
 export class CreateProductDto {
     @IsString()
@@ -11,8 +11,7 @@ export class CreateProductDto {
     @MaxLength(1000)
     description: string;
 
-    @IsString()
-    @IsNotEmpty()
+    @ValidateIf((o) => o.link != null && o.link !== '')
     @IsUrl({}, { message: 'Link phải là URL hợp lệ' })
-    link: string;
+    link?: string;
 }
