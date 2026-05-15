@@ -23,6 +23,9 @@ export default function RootLayout({
     <html lang="vi" suppressHydrationWarning>
       <head>
         <meta charSet="UTF-8" />
+        {/* Mobile Debug Console - Remove after debugging */}
+        <script src="https://cdn.jsdelivr.net/npm/eruda"></script>
+        <script dangerouslySetInnerHTML={{ __html: `eruda.init();` }} />
       </head>
       <body className={`${inter.className} antialiased min-h-screen flex flex-col`} suppressHydrationWarning>
         <Header />

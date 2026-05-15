@@ -149,9 +149,39 @@ export default function LearnPage() {
 
                         {/* Content */}
                         <div
-                            className="prose prose-lg max-w-none mb-12 text-foreground"
+                            className="rich-content max-w-none mb-12 text-foreground"
                             dangerouslySetInnerHTML={{ __html: decodeHtmlEntities(currentSession.content) }}
                         />
+
+                        {/* Attachments Section */}
+                        {(currentSession.attachments && currentSession.attachments.length > 0) && (
+                            <div className="mb-12">
+                                <h3 className="text-xl font-bold text-foreground mb-4">Tài liệu đính kèm</h3>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    {currentSession.attachments.map(att => (
+                                        <a
+                                            key={att.publicId}
+                                            href={att.url}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="flex items-center p-4 bg-card rounded-xl border border-border hover:border-primary transition-colors group"
+                                        >
+                                            <div className="h-10 w-10 shrink-0 bg-primary/10 text-primary rounded-lg flex items-center justify-center font-bold text-xs mr-4 group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
+                                                {att.mimetype.split('/')[1]?.substring(0, 4).toUpperCase() || 'FILE'}
+                                            </div>
+                                            <div className="min-w-0">
+                                                <h4 className="font-semibold text-sm text-foreground truncate group-hover:text-primary transition-colors">
+                                                    {att.filename}
+                                                </h4>
+                                                <p className="text-xs text-muted-foreground mt-0.5">
+                                                    {(att.size / 1024 / 1024).toFixed(2)} MB
+                                                </p>
+                                            </div>
+                                        </a>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
 
                         {/* Comments Section */}
                         <div className="border-t border-border pt-8">

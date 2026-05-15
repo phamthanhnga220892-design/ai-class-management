@@ -8,7 +8,12 @@ import {
     Param,
     Query,
     UseGuards,
+    UseInterceptors,
+    UploadedFile,
+    ParseFilePipe,
+    MaxFileSizeValidator,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { SessionsService } from './sessions.service';
 import { CreateSessionDto } from './dto/create-session.dto';
 import { UpdateSessionDto } from './dto/update-session.dto';
@@ -56,5 +61,31 @@ export class AdminSessionsController {
     async delete(@Param('id') id: string) {
         await this.sessionsService.delete(id);
         return { message: 'Session deleted successfully' };
+    }
+
+    // --- Attachment endpoints ---
+
+    @Post(':id/attachments')
+    @UseInterceptors(FileInterceptor('file', {
+        limits: { fileSize: 50 * 1024 * 1024 }, // 50MB
+    }))
+    async uploadAttachment(
+        @Param('id') id: string,
+        @UploadedFile() file: Express.Multer.File,
+    ) {
+        if (!file) {
+            return { message: 'No file provided' };
+        }
+        return this.sessionsService.addAttachment(id, file);
+    }
+
+    @Delete(':id/attachments/:publicId')
+    async deleteAttachment(
+        @Param('id') id: string,
+        @Param('publicId') publicId: string,
+    ) {
+        // publicId comes URL-encoded, decode it
+        const decodedPublicId = decodeURIComponent(publicId);
+        return this.sessionsService.removeAttachment(id, decodedPublicId);
     }
 }

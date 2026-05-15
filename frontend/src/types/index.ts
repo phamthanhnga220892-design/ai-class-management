@@ -78,6 +78,15 @@ export interface LoginResponse {
     user: User;
 }
 
+export interface Attachment {
+    _id?: string;
+    filename: string;
+    url: string;
+    publicId: string;
+    mimetype: string;
+    size: number;
+}
+
 export interface Session {
     _id: string;
     class: string | Class;
@@ -85,6 +94,7 @@ export interface Session {
     content: string;
     videoUrl?: string;
     orderIndex: number;
+    attachments?: Attachment[];
     createdAt: string;
     updatedAt: string;
 }

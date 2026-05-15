@@ -97,50 +97,54 @@
 - ✅ API client: Comment methods (getComments, createComment, deleteComment)
 - ✅ TypeScript types: Comment interface
 
+### Unit 6: Đính kèm tài liệu khóa học (Cloudinary) ✅
+**Trạng thái:** Đã hoàn thành (Backend 100%, Frontend 100%)
+
+**Backend (Đã xong):**
+- ✅ Tích hợp Cloudinary & Multer
+- ✅ Cập nhật Schema Session (Thêm mảng `attachments`)
+- ✅ API Upload/Delete file (`/admin/sessions/:id/attachments`)
+- ✅ Hỗ trợ mọi loại file (PDF, PPT, Word, Ảnh...) và giới hạn 10MB/file.
+
+**Frontend (Đã xong):**
+- ✅ Cập nhật type `Attachment` trong Frontend.
+- ✅ Sửa file API `api.ts` để gọi API upload (Dùng `FormData`).
+- ✅ Thêm UI upload/delete định dạng file cho màn hình Admin Sessions (`/admin/sessions/page.tsx`) thông qua Modal.
+- ✅ Thêm giao diện tải file cho màn hình học viên (`/learn/[classId]/page.tsx`).
+
 ---
 
 ## 🔄 ĐANG LÀM
-
-**Không có** - Tất cả 5 Units đã hoàn thành!
+- (Tạm thời không có tác vụ nào đang làm)
 
 ---
 
 ## 📋 KẾ HOẠCH TIẾP THEO
 
-**Dự án đã hoàn thành 100%!** 🎉
-
-### Các cải tiến có thể thêm (Optional):
-- [ ] Progress tracking: Đánh dấu sessions đã học
-- [ ] Rich text editor cho comments
-- [ ] Real-time notifications
-- [ ] Email notifications cho registration approval
-- [ ] Advanced search & filters
-- [ ] Analytics dashboard cho admin
-- [ ] Export reports (PDF/Excel)
+**Tiếp tục hoàn thiện UI/UX hoặc bổ sung logic thống kê (Dashboard):**
+1. Cải thiện giao diện Dashboard Admin (hiển thị tổng quan số lượng học viên, khóa học, doanh thu nếu có).
+2. Tích hợp thanh toán online (VNPay/Momo) cho luồng đăng ký học (nếu cần).
+3. Thông báo qua email/SMS khi đăng ký được duyệt.
 
 ---
 
-## 🐛 CÁC LỖI ĐÃ SỬA (Session 18/01/2026)
+## 🐛 CÁC LỖI ĐÃ SỬA GẦN ĐÂY
 
-### 1. Profile Update Functionality ✅
-- **Vấn đề:** API `updateProfile` không tồn tại
-- **Giải pháp:** Thêm `phone` field vào User schema, tạo `UpdateProfileDto`, endpoint `PUT /auth/profile`
+### 1. Lỗi mạng khi gọi API Frontend ✅
+- **Vấn đề:** Trình duyệt localhost không kết nối được tới cấu hình IP mạng.
+- **Giải pháp:** Sửa `.env.local` của Frontend từ IP riêng sang `localhost:3001`.
 
-### 2. Admin Layout Import Error ✅
-- **Vấn đề:** `UserRole` import từ sai module
-- **Giải pháp:** Import `UserRole` từ `@/types` thay vì `@/lib/api`
+### 2. Lỗi Rich Text Editor Quill ✅
+- **Vấn đề:** Không nhận diện được block format `bullet`.
+- **Giải pháp:** Sửa tên format thành mảng chuẩn và bổ sung Helper strip HTML entities.
 
-### 3. Class Display Filter Issue ✅
-- **Vấn đề:** Backend filter không xử lý đồng thời ObjectId và string
-- **Giải pháp:** Sử dụng `$or` query để match cả hai định dạng
+### 3. Lỗi Cannot read properties of null (reading 'course') ✅
+- **Vấn đề:** Lỗi map với null properties trong class bị xoá
+- **Giải pháp:** Thêm early return `if (!classItem) return;`
 
-### 4. Hydration Warning ✅
-- **Vấn đề:** SSR/Client mismatch trong layout
-- **Giải pháp:** Thêm `suppressHydrationWarning` vào `<body>` tag
-
-### 5. Uncontrolled Input Warning ✅
-- **Vấn đề:** Form inputs chuyển từ `undefined` sang giá trị
-- **Giải pháp:** Sử dụng fallback `|| ''` cho tất cả form values
+### 4. Giao diện Admin Upload Layout lỗi overflow ✅
+- **Vấn đề:** Admin Session Content bị tràn do chiều dài block text lớn.
+- **Giải pháp:** Ràng buộc `min-w-0`, parse HTML, tăng size modal lên `max-w-5xl`.
 
 ---
 

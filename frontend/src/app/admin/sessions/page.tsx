@@ -1,8 +1,31 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { api } from '@/lib/api';
 import { Session, Class, Course } from '@/types';
+import dynamic from 'next/dynamic';
+
+const RichTextEditor = dynamic(() => import('@/components/RichTextEditor'), { ssr: false });
+
+/** Strip HTML tags and decode HTML entities for plain-text preview */
+function stripHtml(html: string): string {
+    if (!html) return '';
+    // Remove HTML tags
+    let text = html.replace(/<[^>]*>/g, '');
+    // Decode common HTML entities
+    const entities: Record<string, string> = {
+        '&nbsp;': ' ', '&amp;': '&', '&lt;': '<', '&gt;': '>',
+        '&quot;': '"', '&#39;': "'", '&apos;': "'",
+    };
+    for (const [entity, char] of Object.entries(entities)) {
+        text = text.split(entity).join(char);
+    }
+    // Decode numeric entities like &#160;
+    text = text.replace(/&#(\d+);/g, (_, code) => String.fromCharCode(Number(code)));
+    // Collapse multiple spaces
+    text = text.replace(/\s+/g, ' ').trim();
+    return text;
+}
 
 export default function AdminSessionsPage() {
     const [sessions, setSessions] = useState<Session[]>([]);
@@ -30,6 +53,8 @@ export default function AdminSessionsPage() {
     }, [selectedClassId]);
 
     const loadClasses = async () => {
+        // Guard: skip API calls if not authenticated (layout will redirect to /login)
+        if (!localStorage.getItem('access_token')) return;
         try {
             setLoading(true);
             const data = await api.getClasses() as Class[];
@@ -45,6 +70,8 @@ export default function AdminSessionsPage() {
     };
 
     const loadSessions = async () => {
+        // Guard: skip API calls if not authenticated (layout will redirect to /login)
+        if (!localStorage.getItem('access_token')) return;
         try {
             setLoading(true);
             console.log('🔄 Loading sessions for class:', selectedClassId);
@@ -108,6 +135,67 @@ export default function AdminSessionsPage() {
         } catch (error) {
             console.error('❌ Failed to save session:', error);
             alert('Có lỗi xảy ra khi lưu bài học: ' + (error as any).message);
+        } finally {
+            setActionLoading(false);
+        }
+    };
+
+    const [attachmentSession, setAttachmentSession] = useState<Session | null>(null);
+    const [uploadingAttachment, setUploadingAttachment] = useState(false);
+    const fileInputRef = useRef<HTMLInputElement>(null);
+
+    const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        console.log("Triggered handleFileUpload with files:", e.target.files);
+        if (!attachmentSession || !e.target.files?.length) {
+             console.log("Exited early because no session or no files.");
+             return;
+        }
+        const file = e.target.files[0];
+        console.log("Selected file:", file.name, "Size:", file.size);
+        
+        // max size 50MB
+        if (file.size > 50 * 1024 * 1024) {
+            alert('File quá lớn, dung lượng tối đa là 50MB');
+            return;
+        }
+
+        try {
+            setUploadingAttachment(true);
+            const formData = new FormData();
+            formData.append('file', file);
+            
+            await api.uploadAttachment(attachmentSession._id, formData);
+            // Reload sessions to get updated attachments
+            await loadSessions();
+            
+            // Also update the local state for the modal
+            const updatedSessions = await api.getSessions(selectedClassId) as Session[];
+            const updated = updatedSessions.find(s => s._id === attachmentSession._id);
+            if (updated) setAttachmentSession(updated);
+            
+        } catch (error) {
+            console.error('Failed to upload file:', error);
+            alert('Có lỗi xảy ra khi tải lên: ' + (error as any).message);
+        } finally {
+            setUploadingAttachment(false);
+            if (e.target) e.target.value = ''; // reset input
+        }
+    };
+
+    const handleDeleteAttachment = async (sessionId: string, publicId: string) => {
+        if (!confirm('Bạn có chắc muốn xoá file này?')) return;
+        try {
+            setActionLoading(true);
+            await api.deleteAttachment(sessionId, publicId);
+            await loadSessions();
+            
+            // local update
+            const updatedSessions = await api.getSessions(selectedClassId) as Session[];
+            const updated = updatedSessions.find(s => s._id === attachmentSession?._id);
+            if (updated) setAttachmentSession(updated);
+        } catch (error) {
+            console.error('Failed to delete file:', error);
+            alert('Có lỗi xảy ra khi xoá file');
         } finally {
             setActionLoading(false);
         }
@@ -199,26 +287,38 @@ export default function AdminSessionsPage() {
                         ) : (
                             sessions.map((session) => (
                                 <div key={session._id} className="px-6 py-4 hover:bg-muted/30 transition-colors">
-                                    <div className="flex items-start justify-between">
-                                        <div className="flex-1">
+                                    <div className="flex items-start justify-between gap-4">
+                                        <div className="flex-1 min-w-0">
                                             <div className="flex items-center gap-3 mb-2">
-                                                <span className="flex items-center justify-center w-8 h-8 rounded-full bg-primary/10 text-primary font-bold text-sm">
+                                                <span className="flex-shrink-0 flex items-center justify-center w-8 h-8 rounded-full bg-primary/10 text-primary font-bold text-sm">
                                                     {session.orderIndex}
                                                 </span>
-                                                <h4 className="font-semibold text-foreground">{session.title}</h4>
+                                                <h4 className="font-semibold text-foreground truncate">{session.title}</h4>
                                             </div>
                                             <div className="ml-11 space-y-1">
-                                                <p className="text-sm text-muted-foreground line-clamp-2">
-                                                    {session.content.replace(/<[^>]*>/g, '')}
+                                                <p className="text-sm text-muted-foreground line-clamp-2 break-all">
+                                                    {stripHtml(session.content)}
                                                 </p>
                                                 {session.videoUrl && (
-                                                    <p className="text-xs text-blue-500">
+                                                    <p className="text-xs text-blue-500 truncate">
                                                         🎥 {session.videoUrl}
                                                     </p>
                                                 )}
                                             </div>
                                         </div>
-                                        <div className="flex gap-2 ml-4">
+                                        <div className="flex gap-2 flex-shrink-0">
+                                            <button
+                                                onClick={() => setAttachmentSession(session)}
+                                                disabled={actionLoading}
+                                                className="px-3 py-1 bg-green-500 text-white rounded-lg text-sm font-medium hover:bg-green-600 transition-colors disabled:opacity-50 flex items-center gap-1"
+                                            >
+                                                Tệp
+                                                {session.attachments?.length ? (
+                                                    <span className="bg-white text-green-600 text-xs rounded-full px-2 py-0.5 ml-1 font-bold">
+                                                        {session.attachments.length}
+                                                    </span>
+                                                ) : null}
+                                            </button>
                                             <button
                                                 onClick={() => openEditModal(session)}
                                                 disabled={actionLoading}
@@ -245,7 +345,7 @@ export default function AdminSessionsPage() {
             {/* Create/Edit Modal */}
             {modalOpen && (
                 <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-                    <div className="bg-card border border-border rounded-xl p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+                    <div className="bg-card border border-border rounded-xl p-6 max-w-5xl w-full max-h-[90vh] overflow-y-auto">
                         <h3 className="text-xl font-bold text-foreground mb-6">
                             {editingSession ? 'Chỉnh sửa bài học' : 'Thêm bài học mới'}
                         </h3>
@@ -267,17 +367,14 @@ export default function AdminSessionsPage() {
                                 <label className="block text-sm font-medium text-foreground mb-2">
                                     Nội dung bài học *
                                 </label>
-                                <textarea
-                                    value={formData.content}
-                                    onChange={(e) => setFormData({ ...formData, content: e.target.value })}
-                                    required
-                                    placeholder="Nhập nội dung bài học (hỗ trợ HTML)"
-                                    rows={8}
-                                    className="w-full px-4 py-3 rounded-lg border border-border bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary resize-none"
-                                />
-                                <p className="text-xs text-muted-foreground mt-1">
-                                    Bạn có thể sử dụng HTML tags như &lt;h2&gt;, &lt;p&gt;, &lt;ul&gt;, &lt;li&gt;
-                                </p>
+                                <div className="rounded-lg border border-border overflow-hidden">
+                                    <RichTextEditor
+                                        value={formData.content}
+                                        onChange={(value) => setFormData({ ...formData, content: value })}
+                                        placeholder="Nhập nội dung bài học..."
+                                        minHeight="260px"
+                                    />
+                                </div>
                             </div>
                             <div>
                                 <label className="block text-sm font-medium text-foreground mb-2">
@@ -322,6 +419,85 @@ export default function AdminSessionsPage() {
                                 </button>
                             </div>
                         </form>
+                    </div>
+                </div>
+            )}
+
+            {/* Attachment Modal */}
+            {attachmentSession && (
+                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+                    <div className="bg-card border border-border rounded-xl p-6 max-w-2xl w-full max-h-[90vh] flex flex-col">
+                        <div className="flex justify-between items-center mb-6">
+                            <h3 className="text-xl font-bold text-foreground">
+                                Quản lý Tệp Đính Kèm - {attachmentSession.title}
+                            </h3>
+                            <button
+                                onClick={() => setAttachmentSession(null)}
+                                className="text-muted-foreground hover:text-foreground text-xl leading-none"
+                            >
+                                &times;
+                            </button>
+                        </div>
+                        
+                        <div className="flex-1 overflow-y-auto mb-6 pr-2">
+                            {(!attachmentSession.attachments || attachmentSession.attachments.length === 0) ? (
+                                <p className="text-center text-muted-foreground py-8">Chưa có tệp đính kèm nào.</p>
+                            ) : (
+                                <div className="space-y-3">
+                                    {attachmentSession.attachments.map(att => (
+                                        <div key={att.publicId} className="flex justify-between items-center p-3 bg-muted/30 rounded-lg border border-border">
+                                            <div className="flex items-center gap-3 min-w-0">
+                                                <div className="h-10 w-10 shrink-0 bg-primary/10 text-primary rounded flex items-center justify-center text-xs font-bold">
+                                                    {att.mimetype.split('/')[1]?.substring(0, 4).toUpperCase() || 'FILE'}
+                                                </div>
+                                                <div className="min-w-0">
+                                                    <a href={att.url} target="_blank" rel="noopener noreferrer" className="font-medium text-blue-500 hover:underline truncate block">
+                                                        {att.filename}
+                                                    </a>
+                                                    <p className="text-xs text-muted-foreground">
+                                                        {(att.size / 1024 / 1024).toFixed(2)} MB
+                                                    </p>
+                                                </div>
+                                            </div>
+                                            <button
+                                                onClick={() => handleDeleteAttachment(attachmentSession._id, att.publicId)}
+                                                disabled={actionLoading}
+                                                className="text-red-500 hover:text-red-700 p-2 disabled:opacity-50"
+                                            >
+                                                ✕
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                        
+                        <div className="pt-4 border-t border-border">
+                            <input
+                                ref={fileInputRef}
+                                type="file"
+                                onChange={handleFileUpload}
+                                disabled={uploadingAttachment}
+                                className="hidden"
+                            />
+                            <button
+                                type="button"
+                                onClick={() => fileInputRef.current?.click()}
+                                disabled={uploadingAttachment}
+                                className={`w-full flex items-center justify-center gap-2 p-4 rounded-lg border-2 border-dashed border-primary/50 bg-primary/5 text-primary text-center transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+                                    uploadingAttachment ? '' : 'hover:bg-primary/10 cursor-pointer'
+                                }`}
+                            >
+                                {uploadingAttachment ? (
+                                    <>
+                                        <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-primary"></div>
+                                        <span>Đang tải lên...</span>
+                                    </>
+                                ) : (
+                                    <span>📎 Click để chọn file (Tối đa 50MB)</span>
+                                )}
+                            </button>
+                        </div>
                     </div>
                 </div>
             )}

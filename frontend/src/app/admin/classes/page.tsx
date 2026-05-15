@@ -29,6 +29,8 @@ export default function AdminClassesPage() {
     }, []);
 
     const loadData = async () => {
+        // Guard: skip API calls if not authenticated (layout will redirect to /login)
+        if (!localStorage.getItem('access_token')) return;
         try {
             setLoading(true);
             const [classesData, coursesData] = await Promise.all([

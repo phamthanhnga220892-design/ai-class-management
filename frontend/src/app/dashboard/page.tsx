@@ -36,8 +36,9 @@ export default function DashboardPage() {
             let totalSessions = 0;
             approvedRegistrations.forEach((reg) => {
                 const classItem = reg.class as Class;
+                if (!classItem) return;
                 const course = classItem.course as Course;
-                if (course.totalSessions) {
+                if (course?.totalSessions) {
                     totalSessions += course.totalSessions;
                 }
             });

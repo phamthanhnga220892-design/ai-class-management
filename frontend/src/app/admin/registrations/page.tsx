@@ -18,6 +18,8 @@ export default function AdminRegistrationsPage() {
     }, [filter]);
 
     const loadRegistrations = async () => {
+        // Guard: skip API calls if not authenticated (layout will redirect to /login)
+        if (!localStorage.getItem('access_token')) return;
         try {
             setLoading(true);
             const params = filter ? { status: filter } : {};
