@@ -34,6 +34,12 @@ const FILE_ICONS: Record<ProductFile['fileType'], string> = {
     document: '📄',
 };
 
+function getFileHref(url: string, filename: string, fileType: ProductFile['fileType']): string {
+    if (fileType !== 'document') return url;
+    const safe = filename.replace(/[^a-zA-Z0-9._-]/g, '_');
+    return url.replace('/upload/', `/upload/fl_attachment:${safe}/`);
+}
+
 export default function PublicPortfolioPage() {
     const params = useParams();
     const userId = params.userId as string;
@@ -143,9 +149,10 @@ export default function PublicPortfolioPage() {
                                             {product.files.map((f) => (
                                                 <a
                                                     key={f.publicId}
-                                                    href={f.url}
+                                                    href={getFileHref(f.url, f.filename, f.fileType)}
                                                     target="_blank"
                                                     rel="noopener noreferrer"
+                                                    download={f.fileType === 'document' ? f.filename : undefined}
                                                     className="flex items-center gap-2 text-sm hover:text-primary truncate"
                                                 >
                                                     <span>{FILE_ICONS[f.fileType]}</span>
