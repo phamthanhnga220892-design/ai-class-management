@@ -30,15 +30,19 @@ async function fetchApi<T>(
 ): Promise<T> {
     const token = getAuthToken();
     const headers: Record<string, string> = {
-        'Content-Type': 'application/json',
         ...(options.headers as Record<string, string>),
     };
+
+    if (options.body && options.body instanceof FormData) {
+        // Let browser set Content-Type with boundary for FormData
+        delete headers['Content-Type'];
+    } else if (!headers['Content-Type']) {
+        headers['Content-Type'] = 'application/json';
+    }
 
     if (token) {
         headers['Authorization'] = `Bearer ${token}`;
     }
-
-
     try {
         const response = await fetch(`${API_BASE_URL}${endpoint}`, {
             ...options,
@@ -54,7 +58,15 @@ async function fetchApi<T>(
             );
         }
 
-        return response.json();
+        if (response.status === 204) {
+            return {} as T;
+        }
+
+        const text = await response.text();
+        if (!text) {
+            return {} as T;
+        }
+        return JSON.parse(text);
     } catch (error) {
         // Enhanced error logging for debugging
         if (error instanceof ApiError) {
@@ -130,16 +142,26 @@ export const api = {
     // Products (Student)
     getMyProducts: () => fetchApi('/products/my'),
     getPublicPortfolio: (userId: string) => fetchApi(`/products/portfolio/${userId}`),
-    createProduct: (data: { title: string; description: string; link: string }) =>
-        fetchApi('/products', {
-            method: 'POST',
-            body: JSON.stringify(data),
-        }),
-    updateProduct: (id: string, data: { title?: string; description?: string; link?: string }) =>
-        fetchApi(`/products/${id}`, {
-            method: 'PUT',
-            body: JSON.stringify(data),
-        }),
+    createProduct: (data: { title: string; description: string; link?: string; files?: File[] }) => {
+        const form = new FormData();
+        form.append('title', data.title);
+        form.append('description', data.description);
+        if (data.link) form.append('link', data.link);
+        data.files?.forEach((f) => form.append('files', f));
+        return fetchApi('/products', { method: 'POST', body: form });
+    },
+    updateProduct: (
+        id: string,
+        data: { title?: string; description?: string; link?: string; files?: File[]; deleteFileIds?: string[] },
+    ) => {
+        const form = new FormData();
+        if (data.title !== undefined) form.append('title', data.title);
+        if (data.description !== undefined) form.append('description', data.description);
+        if (data.link !== undefined) form.append('link', data.link);
+        data.files?.forEach((f) => form.append('files', f));
+        data.deleteFileIds?.forEach((fileId) => form.append('deleteFileIds', fileId));
+        return fetchApi(`/products/${id}`, { method: 'PUT', body: form });
+    },
     deleteProduct: (id: string) =>
         fetchApi(`/products/${id}`, {
             method: 'DELETE',
@@ -238,6 +260,18 @@ export const api = {
     deleteSession: (id: string) =>
         fetchApi(`/admin/sessions/${id}`, {
             method: 'DELETE',
+        }),
+
+    uploadAttachment: (sessionId: string, formData: FormData) =>
+        fetchApi(`/admin/sessions/${sessionId}/attachments`, {
+            method: 'POST',
+            body: formData,
+        }),
+
+    deleteAttachment: (sessionId: string, publicId: string) =>
+        fetchApi(`/admin/sessions/${sessionId}/attachments`, {
+            method: 'DELETE',
+            body: JSON.stringify({ publicId }),
         }),
 
     getSessionComments: (id: string) => fetchApi(`/admin/sessions/${id}/comments`),

@@ -4,11 +4,19 @@ import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { api } from '@/lib/api';
 
+interface ProductFile {
+    publicId: string;
+    url: string;
+    filename: string;
+    fileType: 'image' | 'video' | 'document';
+}
+
 interface Product {
     _id: string;
     title: string;
     description: string;
-    link: string;
+    link?: string;
+    files: ProductFile[];
 }
 
 interface PortfolioData {
@@ -19,6 +27,12 @@ interface PortfolioData {
     } | null;
     products: Product[];
 }
+
+const FILE_ICONS: Record<ProductFile['fileType'], string> = {
+    image: '🖼️',
+    video: '🎥',
+    document: '📄',
+};
 
 export default function PublicPortfolioPage() {
     const params = useParams();
@@ -109,15 +123,38 @@ export default function PublicPortfolioPage() {
                                 <p className="text-muted-foreground mb-6 leading-relaxed min-h-[4rem]">
                                     {product.description}
                                 </p>
-                                <a
-                                    href={product.link}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="inline-flex items-center gap-2 px-5 py-2.5 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors font-medium"
-                                >
-                                    <span>Xem sản phẩm</span>
-                                    <span>→</span>
-                                </a>
+
+                                {product.link && (
+                                    <a
+                                        href={product.link}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="inline-flex items-center gap-2 px-5 py-2.5 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors font-medium mb-4"
+                                    >
+                                        <span>Xem sản phẩm</span>
+                                        <span>→</span>
+                                    </a>
+                                )}
+
+                                {product.files?.length > 0 && (
+                                    <div className="mt-3">
+                                        <p className="text-xs text-muted-foreground mb-2">📎 Tệp đính kèm:</p>
+                                        <div className="space-y-1">
+                                            {product.files.map((f) => (
+                                                <a
+                                                    key={f.publicId}
+                                                    href={f.url}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className="flex items-center gap-2 text-sm hover:text-primary truncate"
+                                                >
+                                                    <span>{FILE_ICONS[f.fileType]}</span>
+                                                    <span className="truncate">{f.filename}</span>
+                                                </a>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                         ))}
                     </div>
