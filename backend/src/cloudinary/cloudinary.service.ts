@@ -44,7 +44,7 @@ export class CloudinaryService {
         });
     }
 
-    uploadThumbnail(buffer: Buffer, originalname: string): Promise<{ publicId: string; url: string }> {
+    uploadThumbnail(buffer: Buffer): Promise<{ publicId: string; url: string }> {
         return new Promise((resolve, reject) => {
             cloudinary.uploader
                 .upload_stream(

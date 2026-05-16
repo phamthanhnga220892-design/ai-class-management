@@ -30,7 +30,7 @@ export class UsersService {
         return this.userModel.findById(id).exec();
     }
 
-    async findAllStudents(): Promise<UserDocument[]> {
+    async findAllStudents(): Promise<{ _id: any; fullName: string; email: string }[]> {
         return this.userModel
             .find({ role: UserRole.STUDENT, isActive: true })
             .select('fullName email')
