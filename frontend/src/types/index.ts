@@ -108,3 +108,35 @@ export interface Comment {
     createdAt: string;
     updatedAt: string;
 }
+
+export interface ProductFile {
+    publicId: string;
+    url: string;
+    filename: string;
+    fileType: 'image' | 'video' | 'document';
+}
+
+export interface ProductThumbnail {
+    publicId: string;
+    url: string;
+}
+
+export interface Product {
+    _id: string;
+    user: string | User;
+    createdBy?: string | User | null;
+    title: string;
+    description: string;
+    link?: string;
+    thumbnail?: ProductThumbnail | null;
+    files: ProductFile[];
+    isFeatured: boolean;
+    createdAt: string;
+    updatedAt: string;
+}
+
+export interface ShowcaseResponse {
+    featured: Product[];
+    others: Product[];
+    students: { _id: string; fullName: string }[];
+}

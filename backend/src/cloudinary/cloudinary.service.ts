@@ -44,6 +44,33 @@ export class CloudinaryService {
         });
     }
 
+    uploadThumbnail(buffer: Buffer): Promise<{ publicId: string; url: string }> {
+        return new Promise((resolve, reject) => {
+            cloudinary.uploader
+                .upload_stream(
+                    {
+                        resource_type: 'image',
+                        folder: 'products/thumbnails',
+                        use_filename: true,
+                        unique_filename: true,
+                    },
+                    (error, result) => {
+                        if (error || !result) return reject(error ?? new Error('Upload failed'));
+                        resolve({ publicId: result.public_id, url: result.secure_url });
+                    },
+                )
+                .end(buffer);
+        });
+    }
+
+    async deleteThumbnail(publicId: string): Promise<void> {
+        try {
+            await cloudinary.uploader.destroy(publicId, { resource_type: 'image' });
+        } catch (error) {
+            console.error(`Failed to delete thumbnail ${publicId}:`, error);
+        }
+    }
+
     private getMimeMapping(mimetype: string): {
         resourceType: 'image' | 'video' | 'raw';
         fileType: 'image' | 'video' | 'document';

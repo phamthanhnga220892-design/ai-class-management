@@ -2,22 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { api } from '@/lib/api';
-
-interface ProductFile {
-    publicId: string;
-    url: string;
-    filename: string;
-    fileType: 'image' | 'video' | 'document';
-}
-
-interface Product {
-    _id: string;
-    title: string;
-    description: string;
-    link?: string;
-    files: ProductFile[];
-    createdAt: string;
-}
+import { Product, ProductFile } from '@/types';
 
 const FILE_ICONS: Record<ProductFile['fileType'], string> = {
     image: '🖼️',
@@ -55,6 +40,12 @@ export default function ProductsPage() {
     const [successMsg, setSuccessMsg] = useState('');
 
     const fileInputRef = useRef<HTMLInputElement>(null);
+
+    const [thumbnail, setThumbnail] = useState<File | null>(null);
+    const [thumbnailPreview, setThumbnailPreview] = useState<string | null>(null);
+    const [existingThumbnail, setExistingThumbnail] = useState<{ publicId: string; url: string } | null>(null);
+    const [deleteThumbnail, setDeleteThumbnail] = useState(false);
+    const thumbnailInputRef = useRef<HTMLInputElement>(null);
 
     const showSuccess = (msg: string) => {
         setSuccessMsg(msg);
@@ -95,6 +86,10 @@ export default function ProductsPage() {
         setNewFiles([]);
         setFileError('');
         setEditingProduct(null);
+        setThumbnail(null);
+        setThumbnailPreview(null);
+        setExistingThumbnail(null);
+        setDeleteThumbnail(false);
     };
 
     const openAddModal = () => {
@@ -111,6 +106,10 @@ export default function ProductsPage() {
         setPendingDeleteIds([]);
         setNewFiles([]);
         setFileError('');
+        setThumbnail(null);
+        setThumbnailPreview(null);
+        setExistingThumbnail(product.thumbnail || null);
+        setDeleteThumbnail(false);
         setShowModal(true);
     };
 
@@ -144,6 +143,19 @@ export default function ProductsPage() {
         setFileError('');
     };
 
+    const handleThumbnailSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        if (!file.type.startsWith('image/')) {
+            alert('Ảnh đại diện phải là file ảnh');
+            return;
+        }
+        setThumbnail(file);
+        setThumbnailPreview(URL.createObjectURL(file));
+        setDeleteThumbnail(false);
+        e.target.value = '';
+    };
+
     const toggleDeleteExisting = (publicId: string) => {
         setPendingDeleteIds((prev) =>
             prev.includes(publicId) ? prev.filter((id) => id !== publicId) : [...prev, publicId],
@@ -162,9 +174,11 @@ export default function ProductsPage() {
                     link: link || undefined,
                     files: newFiles,
                     deleteFileIds: pendingDeleteIds,
+                    thumbnail: thumbnail || undefined,
+                    deleteThumbnail,
                 });
             } else {
-                await api.createProduct({ title, description, link: link || undefined, files: newFiles });
+                await api.createProduct({ title, description, link: link || undefined, files: newFiles, thumbnail });
             }
             setShowModal(false);
             resetForm();
@@ -256,6 +270,13 @@ export default function ProductsPage() {
                             key={product._id}
                             className="bg-card rounded-xl border border-border p-6 hover:shadow-lg transition-shadow"
                         >
+                            {product.thumbnail && (
+                                <img
+                                    src={product.thumbnail.url}
+                                    alt={product.title}
+                                    className="w-full h-40 object-cover rounded-lg mb-3"
+                                />
+                            )}
                             <h3 className="text-xl font-bold mb-3">{product.title}</h3>
                             <p className="text-muted-foreground mb-4 line-clamp-3">{product.description}</p>
 
@@ -355,6 +376,49 @@ export default function ProductsPage() {
                                     onChange={(e) => setLink(e.target.value)}
                                     placeholder="https://..."
                                     className="w-full px-4 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary bg-background"
+                                />
+                            </div>
+
+                            {/* Ảnh đại diện */}
+                            <div>
+                                <label className="block text-sm font-medium mb-2">
+                                    Ảnh đại diện <span className="text-muted-foreground font-normal">(không bắt buộc)</span>
+                                </label>
+                                {(thumbnailPreview || (existingThumbnail && !deleteThumbnail)) ? (
+                                    <div className="relative">
+                                        <img
+                                            src={thumbnailPreview || existingThumbnail?.url}
+                                            alt="Thumbnail preview"
+                                            className="w-full h-40 object-cover rounded-lg border border-border"
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                setThumbnail(null);
+                                                setThumbnailPreview(null);
+                                                if (existingThumbnail) setDeleteThumbnail(true);
+                                            }}
+                                            className="absolute top-2 right-2 bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-700"
+                                        >
+                                            ✕
+                                        </button>
+                                    </div>
+                                ) : (
+                                    <button
+                                        type="button"
+                                        onClick={() => thumbnailInputRef.current?.click()}
+                                        className="w-full border-2 border-dashed border-border rounded-lg p-4 text-center hover:border-primary hover:bg-primary/5 transition-colors"
+                                    >
+                                        <div className="text-2xl mb-1">🖼️</div>
+                                        <div className="text-sm text-muted-foreground">Chọn ảnh đại diện</div>
+                                    </button>
+                                )}
+                                <input
+                                    ref={thumbnailInputRef}
+                                    type="file"
+                                    accept="image/*"
+                                    className="hidden"
+                                    onChange={handleThumbnailSelect}
                                 />
                             </div>
 

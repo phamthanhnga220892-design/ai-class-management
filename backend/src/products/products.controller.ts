@@ -1,37 +1,16 @@
 import {
     Controller, Get, Post, Put, Delete,
-    Body, Param, UseGuards, Request,
+    Body, Param, Query, UseGuards, Request,
     UseInterceptors, UploadedFiles,
-    BadRequestException,
 } from '@nestjs/common';
-import { FilesInterceptor } from '@nestjs/platform-express';
-import { memoryStorage } from 'multer';
+import { FileFieldsInterceptor } from '@nestjs/platform-express';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { ProductsService } from './products.service';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
+import { productMulterOptions } from './multer.config';
 
 const MAX_FILES_PER_PRODUCT = 5;
-
-const ALLOWED_MIMETYPES = [
-    'image/',
-    'video/',
-    'application/pdf',
-    'application/vnd.ms-powerpoint',
-    'application/vnd.openxmlformats-officedocument.presentationml.presentation',
-];
-
-const multerOptions = {
-    storage: memoryStorage(),
-    limits: { fileSize: 50 * 1024 * 1024 },
-    fileFilter: (_req: any, file: Express.Multer.File, cb: any) => {
-        const ok = ALLOWED_MIMETYPES.some((type) =>
-            type.endsWith('/') ? file.mimetype.startsWith(type) : file.mimetype === type,
-        );
-        if (!ok) return cb(new BadRequestException('Định dạng file không được hỗ trợ'), false);
-        cb(null, true);
-    },
-};
 
 @Controller('products')
 export class ProductsController {
@@ -43,6 +22,11 @@ export class ProductsController {
         return this.productsService.getMyProducts(req.user.userId);
     }
 
+    @Get('showcase')
+    getShowcase(@Query('userId') userId?: string) {
+        return this.productsService.getShowcase(userId);
+    }
+
     @Get('portfolio/:userId')
     getPublicPortfolio(@Param('userId') userId: string) {
         return this.productsService.getPublicPortfolio(userId);
@@ -50,30 +34,49 @@ export class ProductsController {
 
     @UseGuards(JwtAuthGuard)
     @Post()
-    @UseInterceptors(FilesInterceptor('files', MAX_FILES_PER_PRODUCT, multerOptions))
+    @UseInterceptors(FileFieldsInterceptor([
+        { name: 'thumbnail', maxCount: 1 },
+        { name: 'files', maxCount: MAX_FILES_PER_PRODUCT },
+    ], productMulterOptions))
     create(
         @Request() req,
         @Body() createProductDto: CreateProductDto,
-        @UploadedFiles() files: Express.Multer.File[],
+        @UploadedFiles() uploadedFiles: { thumbnail?: Express.Multer.File[]; files?: Express.Multer.File[] },
     ) {
-        return this.productsService.create(req.user.userId, createProductDto, files ?? []);
+        const files = uploadedFiles?.files ?? [];
+        const thumbnail = uploadedFiles?.thumbnail?.[0];
+        return this.productsService.create(req.user.userId, createProductDto, files, thumbnail);
     }
 
     @UseGuards(JwtAuthGuard)
     @Put(':id')
-    @UseInterceptors(FilesInterceptor('files', MAX_FILES_PER_PRODUCT, multerOptions))
+    @UseInterceptors(FileFieldsInterceptor([
+        { name: 'thumbnail', maxCount: 1 },
+        { name: 'files', maxCount: MAX_FILES_PER_PRODUCT },
+    ], productMulterOptions))
     update(
         @Request() req,
         @Param('id') id: string,
         @Body() updateProductDto: UpdateProductDto,
-        @UploadedFiles() files: Express.Multer.File[],
+        @UploadedFiles() uploadedFiles: { thumbnail?: Express.Multer.File[]; files?: Express.Multer.File[] },
     ) {
-        return this.productsService.update(req.user.userId, id, updateProductDto, files ?? []);
+        const files = uploadedFiles?.files ?? [];
+        const thumbnail = uploadedFiles?.thumbnail?.[0];
+        const deleteThumbnail = updateProductDto.deleteThumbnail ?? false;
+        return this.productsService.update(
+            req.user.userId,
+            req.user.role,
+            id,
+            updateProductDto,
+            files,
+            thumbnail,
+            deleteThumbnail,
+        );
     }
 
     @UseGuards(JwtAuthGuard)
     @Delete(':id')
     delete(@Request() req, @Param('id') id: string) {
-        return this.productsService.delete(req.user.userId, id);
+        return this.productsService.delete(req.user.userId, req.user.role, id);
     }
 }

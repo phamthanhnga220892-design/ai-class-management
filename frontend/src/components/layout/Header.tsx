@@ -77,6 +77,9 @@ export function Header() {
                     <Link href="/courses" className="hover:text-primary transition-colors">
                         Khóa học
                     </Link>
+                    <Link href="/showcase" className="hover:text-primary transition-colors">
+                        Sản phẩm
+                    </Link>
                     <Link href="/#mentors" className="hover:text-primary transition-colors">
                         Mentor
                     </Link>
