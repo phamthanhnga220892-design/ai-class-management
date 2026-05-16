@@ -29,4 +29,13 @@ export class UsersService {
     async findById(id: string): Promise<UserDocument | null> {
         return this.userModel.findById(id).exec();
     }
+
+    async findAllStudents(): Promise<UserDocument[]> {
+        return this.userModel
+            .find({ role: UserRole.STUDENT, isActive: true })
+            .select('fullName email')
+            .sort({ fullName: 1 })
+            .lean()
+            .exec();
+    }
 }
