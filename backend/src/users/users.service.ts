@@ -49,19 +49,19 @@ export class UsersService {
         if (adminId === targetId) {
             throw new ForbiddenException('Không thể xóa tài khoản của chính mình');
         }
-        const user = await this.userModel.findById(targetId).exec();
-        if (!user) {
+        const deleted = await this.userModel.findByIdAndDelete(targetId).exec();
+        if (!deleted) {
             throw new NotFoundException('Không tìm thấy user');
         }
-        await this.userModel.findByIdAndDelete(targetId).exec();
     }
 
     async resetPassword(targetId: string, newPassword: string): Promise<void> {
-        const user = await this.userModel.findById(targetId).exec();
-        if (!user) {
+        const hashed = await bcrypt.hash(newPassword, 10);
+        const updated = await this.userModel
+            .findByIdAndUpdate(targetId, { $set: { password: hashed } })
+            .exec();
+        if (!updated) {
             throw new NotFoundException('Không tìm thấy user');
         }
-        const hashed = await bcrypt.hash(newPassword, 10);
-        await this.userModel.findByIdAndUpdate(targetId, { $set: { password: hashed } }).exec();
     }
 }
