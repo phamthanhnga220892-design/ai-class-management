@@ -113,6 +113,151 @@ function ProductCard({ product, onClick }: { product: Product; onClick: () => vo
     );
 }
 
+function ProductDetailModal({ product, onClose }: { product: Product | null; onClose: () => void }) {
+    useEffect(() => {
+        if (!product) return;
+        const handleKey = (e: KeyboardEvent) => {
+            if (e.key === 'Escape') onClose();
+        };
+        window.addEventListener('keydown', handleKey);
+        return () => window.removeEventListener('keydown', handleKey);
+    }, [product, onClose]);
+
+    if (!product) return null;
+
+    const userId = getUserId(product);
+    const portfolioUrl = userId ? `/portfolio/${userId}` : null;
+
+    return (
+        <div
+            className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+            onClick={onClose}
+        >
+            <div
+                className="bg-card rounded-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto shadow-2xl"
+                onClick={(e) => e.stopPropagation()}
+            >
+                {/* Thumbnail */}
+                {product.thumbnail ? (
+                    <img
+                        src={product.thumbnail.url}
+                        alt={product.title}
+                        className="w-full max-h-72 object-cover rounded-t-2xl"
+                    />
+                ) : (
+                    <div className="w-full h-48 bg-gradient-to-br from-primary/20 to-primary/5 rounded-t-2xl flex items-center justify-center text-6xl">
+                        🎨
+                    </div>
+                )}
+
+                {/* Content */}
+                <div className="p-6">
+                    {/* Close button */}
+                    <div className="flex justify-end mb-2">
+                        <button
+                            onClick={onClose}
+                            className="text-muted-foreground hover:text-foreground text-2xl leading-none"
+                            aria-label="Đóng"
+                        >
+                            ✕
+                        </button>
+                    </div>
+
+                    {/* Featured badge */}
+                    {product.isFeatured && (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-yellow-100 text-yellow-700 text-xs font-medium rounded-full mb-3">
+                            ⭐ Nổi bật
+                        </span>
+                    )}
+
+                    {/* Title */}
+                    <h2 className="text-2xl font-bold mb-2">{product.title}</h2>
+
+                    {/* Owner + portfolio link */}
+                    <div className="flex items-center gap-2 mb-4 text-sm text-muted-foreground">
+                        <span>👤 {getOwnerName(product)}</span>
+                        {portfolioUrl && (
+                            <a
+                                href={portfolioUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-primary hover:underline font-medium"
+                            >
+                                Xem portfolio →
+                            </a>
+                        )}
+                    </div>
+
+                    {/* Description */}
+                    <p className="text-muted-foreground mb-5 leading-relaxed whitespace-pre-wrap">
+                        {product.description}
+                    </p>
+
+                    {/* Project link */}
+                    {product.link && (
+                        <a
+                            href={product.link}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 text-sm font-medium mb-5"
+                        >
+                            🔗 Xem dự án
+                        </a>
+                    )}
+
+                    {/* Attachments */}
+                    {product.files?.length > 0 && (
+                        <div className="mb-5">
+                            <p className="text-sm font-medium mb-2">📎 Tệp đính kèm:</p>
+                            <div className="space-y-2">
+                                {product.files.map((f) => (
+                                    <div key={f.publicId} className="flex items-center gap-2">
+                                        <span className="text-lg">
+                                            {f.fileType === 'image' ? '🖼️' : f.fileType === 'video' ? '🎥' : '📄'}
+                                        </span>
+                                        <span className="flex-1 text-sm truncate text-muted-foreground">
+                                            {f.filename}
+                                        </span>
+                                        <a
+                                            href={getFileHref(f.url, f.filename, f.fileType)}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            download={f.fileType === 'document' ? f.filename : undefined}
+                                            className="flex-shrink-0 px-3 py-1 bg-muted hover:bg-muted/80 text-foreground text-xs rounded-lg font-medium"
+                                        >
+                                            ⬇ Tải xuống
+                                        </a>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Footer */}
+                    <div className="flex gap-3 pt-2 border-t border-border mt-4">
+                        <button
+                            onClick={onClose}
+                            className="flex-1 px-4 py-2 border border-border rounded-lg hover:bg-muted text-sm"
+                        >
+                            Đóng
+                        </button>
+                        {portfolioUrl && (
+                            <a
+                                href={portfolioUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="flex-1 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 text-sm font-medium text-center"
+                            >
+                                → Xem portfolio học viên
+                            </a>
+                        )}
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+}
+
 export default function ShowcasePage() {
     const [data, setData] = useState<ShowcaseResponse | null>(null);
     const [loading, setLoading] = useState(true);
