@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException, ForbiddenException, BadRequestException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model, Types } from 'mongoose';
+import { Model } from 'mongoose';
 import { Product, ProductFile, ProductThumbnail } from './schemas/product.schema';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
@@ -45,36 +45,36 @@ export class ProductsService {
         others: Product[];
         students: { _id: string; fullName: string }[];
     }> {
-        const featured = await this.productModel
-            .find({ isFeatured: true })
-            .populate('user', 'fullName email')
-            .sort({ createdAt: -1 })
-            .lean()
-            .exec();
-
         const othersQuery: any = { isFeatured: false };
         if (userId) othersQuery.user = userId;
 
-        const others = await this.productModel
-            .find(othersQuery)
-            .populate('user', 'fullName email')
-            .sort({ createdAt: -1 })
-            .lean()
-            .exec();
-
-        const studentsWithProducts = await this.productModel.aggregate([
-            { $group: { _id: '$user' } },
-            {
-                $lookup: {
-                    from: 'users',
-                    localField: '_id',
-                    foreignField: '_id',
-                    as: 'userInfo',
+        const [featured, others, studentsWithProducts] = await Promise.all([
+            this.productModel
+                .find({ isFeatured: true })
+                .populate('user', 'fullName email')
+                .sort({ createdAt: -1 })
+                .lean()
+                .exec(),
+            this.productModel
+                .find(othersQuery)
+                .populate('user', 'fullName email')
+                .sort({ createdAt: -1 })
+                .lean()
+                .exec(),
+            this.productModel.aggregate([
+                { $group: { _id: '$user' } },
+                {
+                    $lookup: {
+                        from: 'users',
+                        localField: '_id',
+                        foreignField: '_id',
+                        as: 'userInfo',
+                    },
                 },
-            },
-            { $unwind: '$userInfo' },
-            { $project: { _id: 1, fullName: '$userInfo.fullName' } },
-            { $sort: { fullName: 1 } },
+                { $unwind: '$userInfo' },
+                { $project: { _id: 1, fullName: '$userInfo.fullName' } },
+                { $sort: { fullName: 1 } },
+            ]),
         ]);
 
         return { featured, others, students: studentsWithProducts };
@@ -128,6 +128,11 @@ export class ProductsService {
     ): Promise<Product> {
         if (files.length > ProductsService.MAX_FILES) {
             throw new BadRequestException(`Tối đa ${ProductsService.MAX_FILES} file cho mỗi sản phẩm`);
+        }
+
+        const targetUser = await this.productModel.db.model('User').findById(dto.targetUserId).lean().exec();
+        if (!targetUser) {
+            throw new NotFoundException('Không tìm thấy học viên');
         }
 
         const uploadedFiles = await Promise.all(
@@ -210,7 +215,7 @@ export class ProductsService {
             newFiles.map((f) => this.cloudinaryService.uploadFile(f.buffer, f.originalname, f.mimetype)),
         );
 
-        const { deleteFileIds: _removed, ...fieldsToUpdate } = updateProductDto as any;
+        const { deleteFileIds: _removed, deleteThumbnail: _dt, ...fieldsToUpdate } = updateProductDto as any;
         Object.assign(product, fieldsToUpdate);
         product.files = [...remainingFiles, ...uploadedFiles] as ProductFile[];
         return product.save();

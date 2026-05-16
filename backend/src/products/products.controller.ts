@@ -2,42 +2,15 @@ import {
     Controller, Get, Post, Put, Delete,
     Body, Param, Query, UseGuards, Request,
     UseInterceptors, UploadedFiles,
-    BadRequestException,
 } from '@nestjs/common';
 import { FileFieldsInterceptor } from '@nestjs/platform-express';
-import { memoryStorage } from 'multer';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { ProductsService } from './products.service';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
+import { productMulterOptions } from './multer.config';
 
 const MAX_FILES_PER_PRODUCT = 5;
-
-const ALLOWED_MIMETYPES = [
-    'image/',
-    'video/',
-    'application/pdf',
-    'application/vnd.ms-powerpoint',
-    'application/vnd.openxmlformats-officedocument.presentationml.presentation',
-];
-
-const sharedMulterOptions = {
-    storage: memoryStorage(),
-    limits: { fileSize: 50 * 1024 * 1024 },
-    fileFilter: (_req: any, file: Express.Multer.File, cb: any) => {
-        if (file.fieldname === 'thumbnail') {
-            if (!file.mimetype.startsWith('image/')) {
-                return cb(new BadRequestException('Ảnh đại diện phải là file ảnh'), false);
-            }
-            return cb(null, true);
-        }
-        const ok = ALLOWED_MIMETYPES.some((type) =>
-            type.endsWith('/') ? file.mimetype.startsWith(type) : file.mimetype === type,
-        );
-        if (!ok) return cb(new BadRequestException('Định dạng file không được hỗ trợ'), false);
-        cb(null, true);
-    },
-};
 
 @Controller('products')
 export class ProductsController {
@@ -64,7 +37,7 @@ export class ProductsController {
     @UseInterceptors(FileFieldsInterceptor([
         { name: 'thumbnail', maxCount: 1 },
         { name: 'files', maxCount: MAX_FILES_PER_PRODUCT },
-    ], sharedMulterOptions))
+    ], productMulterOptions))
     create(
         @Request() req,
         @Body() createProductDto: CreateProductDto,
@@ -80,7 +53,7 @@ export class ProductsController {
     @UseInterceptors(FileFieldsInterceptor([
         { name: 'thumbnail', maxCount: 1 },
         { name: 'files', maxCount: MAX_FILES_PER_PRODUCT },
-    ], sharedMulterOptions))
+    ], productMulterOptions))
     update(
         @Request() req,
         @Param('id') id: string,
@@ -89,7 +62,7 @@ export class ProductsController {
     ) {
         const files = uploadedFiles?.files ?? [];
         const thumbnail = uploadedFiles?.thumbnail?.[0];
-        const deleteThumbnail = (updateProductDto as any).deleteThumbnail === 'true';
+        const deleteThumbnail = updateProductDto.deleteThumbnail ?? false;
         return this.productsService.update(
             req.user.userId,
             req.user.role,
