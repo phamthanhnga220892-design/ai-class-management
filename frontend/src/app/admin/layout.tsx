@@ -52,6 +52,7 @@ export default function AdminLayout({
         { href: '/admin/registrations', label: 'Quản lý Đăng ký', icon: '📝' },
         { href: '/admin/classes', label: 'Quản lý Lớp học', icon: '🏫' },
         { href: '/admin/sessions', label: 'Quản lý Bài học', icon: '📚' },
+        { href: '/admin/products', label: 'Sản phẩm học viên', icon: '🎨' },
     ];
 
     return (
