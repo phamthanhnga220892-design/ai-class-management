@@ -63,10 +63,11 @@ export class ProductsService {
                 .exec(),
             this.productModel.aggregate([
                 { $group: { _id: '$user' } },
+                { $addFields: { userObjId: { $toObjectId: '$_id' } } },
                 {
                     $lookup: {
                         from: 'users',
-                        localField: '_id',
+                        localField: 'userObjId',
                         foreignField: '_id',
                         as: 'userInfo',
                     },

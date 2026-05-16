@@ -341,24 +341,42 @@ export default function ShowcasePage() {
                             </section>
                         )}
 
+                        {/* Student Filter */}
+                        {data?.students && data.students.length > 0 && (
+                            <div className="mb-8">
+                                <p className="text-sm text-muted-foreground mb-3 font-medium">🎓 Lọc theo học viên</p>
+                                <div className="flex flex-wrap gap-2">
+                                    <button
+                                        onClick={() => setSelectedStudent('')}
+                                        className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${
+                                            selectedStudent === ''
+                                                ? 'bg-primary text-primary-foreground'
+                                                : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                                        }`}
+                                    >
+                                        Tất cả
+                                    </button>
+                                    {data.students.map((s) => (
+                                        <button
+                                            key={s._id}
+                                            onClick={() => setSelectedStudent(s._id)}
+                                            className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${
+                                                selectedStudent === s._id
+                                                    ? 'bg-primary text-primary-foreground'
+                                                    : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                                            }`}
+                                        >
+                                            {s.fullName}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
                         {/* All Products Section */}
                         <section>
-                            <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
+                            <div className="flex items-center mb-6">
                                 <h2 className="text-2xl font-bold">Tất cả sản phẩm</h2>
-                                {data?.students && data.students.length > 0 && (
-                                    <select
-                                        value={selectedStudent}
-                                        onChange={(e) => setSelectedStudent(e.target.value)}
-                                        className="px-4 py-2 border border-border rounded-lg bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-                                    >
-                                        <option value="">Tất cả học viên</option>
-                                        {data.students.map((s) => (
-                                            <option key={s._id} value={s._id}>
-                                                {s.fullName}
-                                            </option>
-                                        ))}
-                                    </select>
-                                )}
                             </div>
 
                             {data?.others && data.others.length > 0 ? (
