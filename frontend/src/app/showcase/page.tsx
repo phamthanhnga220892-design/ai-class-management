@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { api } from '@/lib/api';
-import { Product, ShowcaseResponse } from '@/types';
+import { Product, ShowcaseResponse, User } from '@/types';
 
 function getFileIcon(fileType: 'image' | 'video' | 'document') {
     if (fileType === 'image') return '🖼️';
@@ -19,7 +19,7 @@ function getOwnerName(product: Product): string {
 
 function getUserId(product: Product): string {
     if (product.user && typeof product.user === 'object') {
-        return (product.user as any)._id || '';
+        return (product.user as User)._id || '';
     }
     return typeof product.user === 'string' ? product.user : '';
 }
