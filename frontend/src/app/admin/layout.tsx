@@ -49,6 +49,7 @@ export default function AdminLayout({
     }
 
     const navLinks = [
+        { href: '/admin/users', label: 'Quản lý User', icon: '👥' },
         { href: '/admin/registrations', label: 'Quản lý Đăng ký', icon: '📝' },
         { href: '/admin/classes', label: 'Quản lý Lớp học', icon: '🏫' },
         { href: '/admin/sessions', label: 'Quản lý Bài học', icon: '📚' },

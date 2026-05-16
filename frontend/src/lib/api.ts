@@ -329,6 +329,19 @@ export const api = {
         fetchApi(`/comments/${id}`, {
             method: 'DELETE',
         }),
+
+    // Admin - Users
+    adminGetUsers: () =>
+        fetchApi<import('@/types').User[]>('/admin/users'),
+
+    adminDeleteUser: (id: string) =>
+        fetchApi<{ message: string }>(`/admin/users/${id}`, { method: 'DELETE' }),
+
+    adminResetPassword: (id: string, newPassword: string) =>
+        fetchApi<{ message: string }>(`/admin/users/${id}/reset-password`, {
+            method: 'PATCH',
+            body: JSON.stringify({ newPassword }),
+        }),
 };
 
 /**
