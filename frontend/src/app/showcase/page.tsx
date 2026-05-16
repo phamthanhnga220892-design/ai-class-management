@@ -17,9 +17,25 @@ function getOwnerName(product: Product): string {
     return '';
 }
 
-function FeaturedCard({ product }: { product: Product }) {
+function getUserId(product: Product): string {
+    if (product.user && typeof product.user === 'object') {
+        return (product.user as any)._id || '';
+    }
+    return typeof product.user === 'string' ? product.user : '';
+}
+
+function getFileHref(url: string, filename: string, fileType: 'image' | 'video' | 'document'): string {
+    if (fileType !== 'document') return url;
+    const safe = filename.replace(/[^a-zA-Z0-9._-]/g, '_');
+    return url.replace('/upload/', `/upload/fl_attachment:${safe}/`);
+}
+
+function FeaturedCard({ product, onClick }: { product: Product; onClick: () => void }) {
     return (
-        <div className="flex gap-6 bg-card border border-border rounded-2xl p-6 hover:shadow-lg transition-shadow">
+        <div
+            className="flex gap-6 bg-card border border-border rounded-2xl p-6 hover:shadow-lg transition-shadow cursor-pointer"
+            onClick={onClick}
+        >
             {product.thumbnail ? (
                 <img
                     src={product.thumbnail.url}
@@ -49,6 +65,7 @@ function FeaturedCard({ product }: { product: Product }) {
                         href={product.link}
                         target="_blank"
                         rel="noopener noreferrer"
+                        onClick={(e) => e.stopPropagation()}
                         className="inline-flex items-center gap-1 text-sm text-primary hover:underline"
                     >
                         🔗 Xem dự án
@@ -59,9 +76,12 @@ function FeaturedCard({ product }: { product: Product }) {
     );
 }
 
-function ProductCard({ product }: { product: Product }) {
+function ProductCard({ product, onClick }: { product: Product; onClick: () => void }) {
     return (
-        <div className="bg-card border border-border rounded-xl overflow-hidden hover:shadow-lg transition-shadow">
+        <div
+            className="bg-card border border-border rounded-xl overflow-hidden hover:shadow-lg transition-shadow cursor-pointer"
+            onClick={onClick}
+        >
             {product.thumbnail ? (
                 <img
                     src={product.thumbnail.url}
@@ -82,6 +102,7 @@ function ProductCard({ product }: { product: Product }) {
                         href={product.link}
                         target="_blank"
                         rel="noopener noreferrer"
+                        onClick={(e) => e.stopPropagation()}
                         className="text-xs text-primary hover:underline"
                     >
                         🔗 Xem dự án
@@ -139,7 +160,7 @@ export default function ShowcasePage() {
                                 </div>
                                 <div className="space-y-4">
                                     {data.featured.map((product) => (
-                                        <FeaturedCard key={product._id} product={product} />
+                                        <FeaturedCard key={product._id} product={product} onClick={() => {}} />
                                     ))}
                                 </div>
                             </section>
@@ -168,7 +189,7 @@ export default function ShowcasePage() {
                             {data?.others && data.others.length > 0 ? (
                                 <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                                     {data.others.map((product) => (
-                                        <ProductCard key={product._id} product={product} />
+                                        <ProductCard key={product._id} product={product} onClick={() => {}} />
                                     ))}
                                 </div>
                             ) : (
