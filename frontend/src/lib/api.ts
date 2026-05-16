@@ -142,22 +142,25 @@ export const api = {
     // Products (Student)
     getMyProducts: () => fetchApi('/products/my'),
     getPublicPortfolio: (userId: string) => fetchApi(`/products/portfolio/${userId}`),
-    createProduct: (data: { title: string; description: string; link?: string; files?: File[] }) => {
+    createProduct: (data: { title: string; description: string; link?: string; files?: File[]; thumbnail?: File | null }) => {
         const form = new FormData();
         form.append('title', data.title);
         form.append('description', data.description);
         if (data.link) form.append('link', data.link);
+        if (data.thumbnail) form.append('thumbnail', data.thumbnail);
         data.files?.forEach((f) => form.append('files', f));
         return fetchApi('/products', { method: 'POST', body: form });
     },
     updateProduct: (
         id: string,
-        data: { title?: string; description?: string; link?: string; files?: File[]; deleteFileIds?: string[] },
+        data: { title?: string; description?: string; link?: string; files?: File[]; deleteFileIds?: string[]; thumbnail?: File | null; deleteThumbnail?: boolean },
     ) => {
         const form = new FormData();
         if (data.title !== undefined) form.append('title', data.title);
         if (data.description !== undefined) form.append('description', data.description);
         if (data.link !== undefined) form.append('link', data.link);
+        if (data.thumbnail) form.append('thumbnail', data.thumbnail);
+        if (data.deleteThumbnail) form.append('deleteThumbnail', 'true');
         data.files?.forEach((f) => form.append('files', f));
         data.deleteFileIds?.forEach((fileId) => form.append('deleteFileIds', fileId));
         return fetchApi(`/products/${id}`, { method: 'PUT', body: form });
@@ -166,6 +169,40 @@ export const api = {
         fetchApi(`/products/${id}`, {
             method: 'DELETE',
         }),
+
+    // Public showcase
+    getShowcase: (userId?: string) => {
+        const query = userId ? `?userId=${userId}` : '';
+        return fetchApi(`/products/showcase${query}`);
+    },
+
+    // Admin - Products
+    adminGetProducts: (userId?: string) => {
+        const query = userId ? `?userId=${userId}` : '';
+        return fetchApi(`/admin/products${query}`);
+    },
+    adminGetStudents: () => fetchApi('/admin/products/students'),
+    adminCreateProduct: (data: {
+        targetUserId: string;
+        title: string;
+        description: string;
+        link?: string;
+        files?: File[];
+        thumbnail?: File | null;
+        isFeatured?: boolean;
+    }) => {
+        const form = new FormData();
+        form.append('targetUserId', data.targetUserId);
+        form.append('title', data.title);
+        form.append('description', data.description);
+        if (data.link) form.append('link', data.link);
+        if (data.thumbnail) form.append('thumbnail', data.thumbnail);
+        if (data.isFeatured) form.append('isFeatured', 'true');
+        data.files?.forEach((f) => form.append('files', f));
+        return fetchApi('/admin/products', { method: 'POST', body: form });
+    },
+    adminToggleFeatured: (id: string) =>
+        fetchApi(`/admin/products/${id}/featured`, { method: 'PATCH' }),
 
     // Admin - Registrations
     getAllRegistrations: (params?: {
