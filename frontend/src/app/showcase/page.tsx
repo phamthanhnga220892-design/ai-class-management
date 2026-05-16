@@ -266,6 +266,7 @@ export default function ShowcasePage() {
     const [data, setData] = useState<ShowcaseResponse | null>(null);
     const [loading, setLoading] = useState(true);
     const [selectedStudent, setSelectedStudent] = useState('');
+    const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
 
     useEffect(() => {
         fetchShowcase();
@@ -309,7 +310,7 @@ export default function ShowcasePage() {
                                 </div>
                                 <div className="space-y-4">
                                     {data.featured.map((product) => (
-                                        <FeaturedCard key={product._id} product={product} onClick={() => {}} />
+                                        <FeaturedCard key={product._id} product={product} onClick={() => setSelectedProduct(product)} />
                                     ))}
                                 </div>
                             </section>
@@ -338,7 +339,7 @@ export default function ShowcasePage() {
                             {data?.others && data.others.length > 0 ? (
                                 <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                                     {data.others.map((product) => (
-                                        <ProductCard key={product._id} product={product} onClick={() => {}} />
+                                        <ProductCard key={product._id} product={product} onClick={() => setSelectedProduct(product)} />
                                     ))}
                                 </div>
                             ) : (
@@ -351,6 +352,10 @@ export default function ShowcasePage() {
                     </>
                 )}
             </div>
+            <ProductDetailModal
+                product={selectedProduct}
+                onClose={() => setSelectedProduct(null)}
+            />
         </div>
     );
 }
