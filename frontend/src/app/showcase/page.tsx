@@ -120,7 +120,11 @@ function ProductDetailModal({ product, onClose }: { product: Product | null; onC
             if (e.key === 'Escape') onClose();
         };
         window.addEventListener('keydown', handleKey);
-        return () => window.removeEventListener('keydown', handleKey);
+        document.body.style.overflow = 'hidden';
+        return () => {
+            window.removeEventListener('keydown', handleKey);
+            document.body.style.overflow = '';
+        };
     }, [product, onClose]);
 
     if (!product) return null;
@@ -213,7 +217,7 @@ function ProductDetailModal({ product, onClose }: { product: Product | null; onC
                                 {product.files.map((f) => (
                                     <div key={f.publicId} className="flex items-center gap-2">
                                         <span className="text-lg">
-                                            {f.fileType === 'image' ? '🖼️' : f.fileType === 'video' ? '🎥' : '📄'}
+                                            {getFileIcon(f.fileType)}
                                         </span>
                                         <span className="flex-1 text-sm truncate text-muted-foreground">
                                             {f.filename}
