@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { api } from '@/lib/api';
 import { Product, ShowcaseResponse, User } from '@/types';
 
@@ -267,6 +267,7 @@ export default function ShowcasePage() {
     const [loading, setLoading] = useState(true);
     const [selectedStudent, setSelectedStudent] = useState('');
     const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+    const productsRef = useRef<HTMLElement>(null);
 
     useEffect(() => {
         fetchShowcase();
@@ -285,6 +286,15 @@ export default function ShowcasePage() {
     };
 
     const totalProducts = data ? data.featured.length + data.others.length : null;
+
+    const handleFilterStudent = (studentId: string) => {
+        setSelectedStudent(studentId);
+        if (studentId) {
+            setTimeout(() => {
+                productsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }, 100);
+        }
+    };
 
     return (
         <div className="min-h-screen bg-background">
@@ -326,8 +336,8 @@ export default function ShowcasePage() {
                     </div>
                 ) : (
                     <>
-                        {/* Featured Section */}
-                        {data?.featured && data.featured.length > 0 && (
+                        {/* Featured Section — ẩn khi đang lọc theo học viên */}
+                        {data?.featured && data.featured.length > 0 && !selectedStudent && (
                             <section className="mb-12">
                                 <div className="flex items-center gap-2 mb-6">
                                     <span className="text-2xl">⭐</span>
@@ -347,7 +357,7 @@ export default function ShowcasePage() {
                                 <p className="text-sm text-muted-foreground mb-3 font-medium">🎓 Lọc theo học viên</p>
                                 <div className="flex flex-wrap gap-2">
                                     <button
-                                        onClick={() => setSelectedStudent('')}
+                                        onClick={() => handleFilterStudent('')}
                                         className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${
                                             selectedStudent === ''
                                                 ? 'bg-primary text-primary-foreground'
@@ -359,7 +369,7 @@ export default function ShowcasePage() {
                                     {data.students.map((s) => (
                                         <button
                                             key={s._id}
-                                            onClick={() => setSelectedStudent(s._id)}
+                                            onClick={() => handleFilterStudent(s._id)}
                                             className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${
                                                 selectedStudent === s._id
                                                     ? 'bg-primary text-primary-foreground'
@@ -374,7 +384,7 @@ export default function ShowcasePage() {
                         )}
 
                         {/* All Products Section */}
-                        <section>
+                        <section ref={productsRef}>
                             <div className="flex items-center mb-6">
                                 <h2 className="text-2xl font-bold">Tất cả sản phẩm</h2>
                             </div>
