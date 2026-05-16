@@ -284,17 +284,37 @@ export default function ShowcasePage() {
         }
     };
 
+    const totalProducts = data ? data.featured.length + data.others.length : null;
+
     return (
         <div className="min-h-screen bg-background">
-            <div className="container mx-auto px-4 py-12">
-                {/* Header */}
-                <div className="text-center mb-12">
-                    <h1 className="text-4xl font-bold mb-3">Sản phẩm của học viên</h1>
-                    <p className="text-muted-foreground text-lg">
-                        Khám phá các dự án được tạo ra trong khóa học AI
+            {/* Hero Banner */}
+            <div className="bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-700 py-20">
+                <div className="container mx-auto px-4 text-center">
+                    <div className="text-6xl mb-5">🎨</div>
+                    <h1 className="text-5xl font-bold text-white mb-4">Sản phẩm của học viên</h1>
+                    <p className="text-white/75 text-lg mb-10">
+                        Khám phá các dự án sáng tạo được tạo ra trong khóa học AI
                     </p>
+                    {/* Stats */}
+                    <div className="flex justify-center gap-4 flex-wrap">
+                        <div className="bg-white/15 backdrop-blur-sm rounded-2xl px-8 py-4 text-white min-w-[120px]">
+                            <div className="text-3xl font-bold">{data?.students.length ?? '—'}</div>
+                            <div className="text-sm text-white/70 mt-1">🎓 Học viên</div>
+                        </div>
+                        <div className="bg-white/15 backdrop-blur-sm rounded-2xl px-8 py-4 text-white min-w-[120px]">
+                            <div className="text-3xl font-bold">{totalProducts ?? '—'}</div>
+                            <div className="text-sm text-white/70 mt-1">📦 Sản phẩm</div>
+                        </div>
+                        <div className="bg-white/15 backdrop-blur-sm rounded-2xl px-8 py-4 text-white min-w-[120px]">
+                            <div className="text-3xl font-bold">{data?.featured.length ?? '—'}</div>
+                            <div className="text-sm text-white/70 mt-1">⭐ Nổi bật</div>
+                        </div>
+                    </div>
                 </div>
+            </div>
 
+            <div className="container mx-auto px-4 py-12">
                 {loading ? (
                     <div className="flex justify-center py-20">
                         <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary"></div>
