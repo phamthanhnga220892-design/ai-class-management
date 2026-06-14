@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { BadGatewayException, Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { v2 as cloudinary } from 'cloudinary';
 
@@ -11,11 +11,26 @@ export interface UploadedFileResult {
 
 @Injectable()
 export class CloudinaryService {
+    private readonly logger = new Logger(CloudinaryService.name);
+
     constructor(private config: ConfigService) {
+        const cloudName = config.get('CLOUDINARY_CLOUD_NAME');
+        const apiKey = config.get('CLOUDINARY_API_KEY');
+        const apiSecret = config.get('CLOUDINARY_API_SECRET');
+
+        if (!cloudName || !apiKey || !apiSecret) {
+            this.logger.error(
+                `Cloudinary chưa được cấu hình đầy đủ. ` +
+                    `cloud_name: ${cloudName ? 'set' : 'MISSING'}, ` +
+                    `api_key: ${apiKey ? 'set' : 'MISSING'}, ` +
+                    `api_secret: ${apiSecret ? 'set' : 'MISSING'}`,
+            );
+        }
+
         cloudinary.config({
-            cloud_name: config.get('CLOUDINARY_CLOUD_NAME'),
-            api_key: config.get('CLOUDINARY_API_KEY'),
-            api_secret: config.get('CLOUDINARY_API_SECRET'),
+            cloud_name: cloudName,
+            api_key: apiKey,
+            api_secret: apiSecret,
         });
     }
 
@@ -31,7 +46,14 @@ export class CloudinaryService {
                         unique_filename: true,
                     },
                     (error, result) => {
-                        if (error || !result) return reject(error ?? new Error('Upload failed'));
+                        if (error || !result) {
+                            this.logger.error(
+                                `Tải file "${originalname}" lên Cloudinary thất bại: ${error?.message ?? 'không có kết quả trả về'}`,
+                            );
+                            return reject(
+                                new BadGatewayException('Không thể tải file lên, vui lòng thử lại'),
+                            );
+                        }
                         resolve({
                             publicId: result.public_id,
                             url: result.secure_url,
@@ -55,7 +77,14 @@ export class CloudinaryService {
                         unique_filename: true,
                     },
                     (error, result) => {
-                        if (error || !result) return reject(error ?? new Error('Upload failed'));
+                        if (error || !result) {
+                            this.logger.error(
+                                `Tải ảnh đại diện lên Cloudinary thất bại: ${error?.message ?? 'không có kết quả trả về'}`,
+                            );
+                            return reject(
+                                new BadGatewayException('Không thể tải ảnh đại diện lên, vui lòng thử lại'),
+                            );
+                        }
                         resolve({ publicId: result.public_id, url: result.secure_url });
                     },
                 )
