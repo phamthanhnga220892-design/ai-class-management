@@ -36,13 +36,23 @@ export class UsersService {
             .exec();
     }
 
-    async findAll(): Promise<Omit<UserDocument, 'password'>[]> {
-        return this.userModel
-            .find()
-            .select('-password')
-            .sort({ createdAt: -1 })
-            .lean()
-            .exec() as any;
+    async findAll(): Promise<(Omit<UserDocument, 'password'> & { productCount: number })[]> {
+        const [users, productCounts] = await Promise.all([
+            this.userModel.find().select('-password').sort({ createdAt: -1 }).lean().exec(),
+            this.userModel.db
+                .model('Product')
+                // Gom theo dạng string: `Product.user` là Mixed path nên cùng một học viên
+                // có thể tồn tại cả bản string lẫn ObjectId, gom thô sẽ tách thành hai nhóm.
+                .aggregate<{ _id: string | null; count: number }>([
+                    { $group: { _id: { $toString: '$user' }, count: { $sum: 1 } } },
+                ]),
+        ]);
+
+        const countByUser = new Map(productCounts.map((c) => [String(c._id), c.count]));
+        return users.map((u) => ({
+            ...u,
+            productCount: countByUser.get(String(u._id)) ?? 0,
+        })) as any;
     }
 
     async deleteUser(adminId: string, targetId: string): Promise<void> {

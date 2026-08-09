@@ -12,6 +12,8 @@ export interface User {
     role: UserRole;
     phone?: string;
     createdAt: string;
+    /** Chỉ có ở danh sách user phía admin. */
+    productCount?: number;
 }
 
 export interface Course {

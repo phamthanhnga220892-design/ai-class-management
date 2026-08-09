@@ -21,6 +21,16 @@ function getOwnerName(product: Product): string {
     return '';
 }
 
+/**
+ * Chủ đã bị xóa thì populate trả về null — mà `typeof null === 'object'`,
+ * nên phải kiểm tra null trước khi đọc `_id`.
+ */
+function getOwnerId(product: Product): string {
+    if (!product.user) return '';
+    if (typeof product.user === 'object') return (product.user as any)._id || '';
+    return product.user;
+}
+
 function isAdminCreated(product: Product): boolean {
     return !!product.createdBy;
 }
@@ -111,7 +121,7 @@ export default function AdminProductsPage() {
 
     const openEditModal = (product: Product) => {
         setEditingProduct(product);
-        setTargetUserId(typeof product.user === 'object' ? (product.user as any)._id : product.user);
+        setTargetUserId(getOwnerId(product));
         setTitle(product.title);
         setDescription(product.description);
         setLink(product.link || '');
@@ -125,6 +135,21 @@ export default function AdminProductsPage() {
         setNewFiles([]);
         setFileError('');
         setShowModal(true);
+    };
+
+    /**
+     * Danh sách chọn chủ sở hữu. `students` chỉ gồm học viên đang hoạt động, nên nếu
+     * chủ hiện tại không nằm trong đó (tài khoản đã tắt, hoặc chủ là admin) thì phải
+     * chèn thêm — không thì select rơi về rỗng và dễ gán nhầm sang người khác.
+     */
+    const ownerOptions = () => {
+        if (!editingProduct) return students;
+        const ownerId = getOwnerId(editingProduct);
+        if (!ownerId || students.some((s) => s._id === ownerId)) return students;
+        return [
+            { _id: ownerId, fullName: getOwnerName(editingProduct) || 'Chủ sở hữu hiện tại' },
+            ...students,
+        ];
     };
 
     const totalFileCount = () =>
@@ -167,6 +192,8 @@ export default function AdminProductsPage() {
         try {
             if (editingProduct) {
                 await api.updateProduct(editingProduct._id, {
+                    // Chỉ gửi khi thực sự đổi chủ, tránh ghi đè thừa.
+                    targetUserId: targetUserId !== getOwnerId(editingProduct) ? targetUserId : undefined,
                     title,
                     description,
                     link: link || undefined,
@@ -331,13 +358,12 @@ export default function AdminProductsPage() {
                                 <label className="block text-sm font-medium mb-2">Học viên *</label>
                                 <select
                                     required
-                                    disabled={!!editingProduct}
                                     value={targetUserId}
                                     onChange={(e) => setTargetUserId(e.target.value)}
                                     className="w-full px-4 py-2 border border-border rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-60"
                                 >
                                     <option value="">Chọn học viên...</option>
-                                    {students.map((s) => (
+                                    {ownerOptions().map((s) => (
                                         <option key={s._id} value={s._id}>
                                             {s.fullName}
                                         </option>

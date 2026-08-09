@@ -181,6 +181,16 @@ export class ProductsService {
             throw new ForbiddenException('Bạn không có quyền chỉnh sửa sản phẩm này');
         }
 
+        const { targetUserId } = updateProductDto;
+        if (targetUserId && !isAdmin) {
+            throw new ForbiddenException('Bạn không có quyền đổi chủ sở hữu sản phẩm');
+        }
+        // Kiểm tra trước khi upload để không bỏ lại file rác trên Cloudinary nếu user đích không tồn tại.
+        if (targetUserId) {
+            const newOwner = await this.productModel.db.model('User').findById(targetUserId).lean().exec();
+            if (!newOwner) throw new NotFoundException('Không tìm thấy học viên');
+        }
+
         const deleteFileIds: string[] = Array.isArray(updateProductDto.deleteFileIds)
             ? updateProductDto.deleteFileIds
             : updateProductDto.deleteFileIds
@@ -216,8 +226,20 @@ export class ProductsService {
             newFiles.map((f) => this.cloudinaryService.uploadFile(f.buffer, f.originalname, f.mimetype)),
         );
 
-        const { deleteFileIds: _removed, deleteThumbnail: _dt, ...fieldsToUpdate } = updateProductDto as any;
+        const {
+            deleteFileIds: _removed,
+            deleteThumbnail: _dt,
+            targetUserId: _target,
+            ...fieldsToUpdate
+        } = updateProductDto as any;
         Object.assign(product, fieldsToUpdate);
+        if (targetUserId) {
+            // `user` là Mixed path (schema khai `Types.ObjectId` — class BSON — thay vì
+            // `Schema.Types.ObjectId`), nên mongoose không cast gì cả. create()/adminCreate()
+            // lưu string, và các query lọc theo user cũng so bằng string. Lưu ObjectId ở đây
+            // sẽ khiến sản phẩm biến mất khỏi dashboard và portfolio của chủ mới.
+            product.user = targetUserId as any;
+        }
         product.files = [...remainingFiles, ...uploadedFiles] as ProductFile[];
         return product.save();
     }

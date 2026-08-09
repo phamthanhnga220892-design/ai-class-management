@@ -153,9 +153,10 @@ export const api = {
     },
     updateProduct: (
         id: string,
-        data: { title?: string; description?: string; link?: string; files?: File[]; deleteFileIds?: string[]; thumbnail?: File | null; deleteThumbnail?: boolean },
+        data: { title?: string; description?: string; link?: string; files?: File[]; deleteFileIds?: string[]; thumbnail?: File | null; deleteThumbnail?: boolean; targetUserId?: string },
     ) => {
         const form = new FormData();
+        if (data.targetUserId) form.append('targetUserId', data.targetUserId);
         if (data.title !== undefined) form.append('title', data.title);
         if (data.description !== undefined) form.append('description', data.description);
         if (data.link !== undefined) form.append('link', data.link);

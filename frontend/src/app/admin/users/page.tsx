@@ -59,7 +59,10 @@ export default function AdminUsersPage() {
     };
 
     const handleDelete = async (user: User) => {
-        if (!confirm(`Bạn có chắc muốn xóa user "${user.fullName}"?`)) return;
+        const productWarning = user.productCount
+            ? `\n\n⚠️ Học viên này còn ${user.productCount} sản phẩm. Xóa xong các sản phẩm đó sẽ không có chủ — vào trang Sản phẩm để gán lại cho học viên khác.`
+            : '';
+        if (!confirm(`Bạn có chắc muốn xóa user "${user.fullName}"?${productWarning}`)) return;
         try {
             await api.adminDeleteUser(user._id);
             setUsers((prev) => prev.filter((u) => u._id !== user._id));
