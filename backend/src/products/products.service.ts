@@ -45,12 +45,16 @@ export class ProductsService {
         others: Product[];
         students: { _id: string; fullName: string }[];
     }> {
+        const featuredQuery: any = { isFeatured: true };
         const othersQuery: any = { isFeatured: false };
-        if (userId) othersQuery.user = userId;
+        if (userId) {
+            featuredQuery.user = userId;
+            othersQuery.user = userId;
+        }
 
         const [featured, others, studentsWithProducts] = await Promise.all([
             this.productModel
-                .find({ isFeatured: true })
+                .find(featuredQuery)
                 .populate('user', 'fullName email')
                 .sort({ createdAt: -1 })
                 .lean()

@@ -336,8 +336,8 @@ export default function ShowcasePage() {
                     </div>
                 ) : (
                     <>
-                        {/* Featured Section — ẩn khi đang lọc theo học viên */}
-                        {data?.featured && data.featured.length > 0 && !selectedStudent && (
+                        {/* Featured Section */}
+                        {data?.featured && data.featured.length > 0 && (
                             <section className="mb-12">
                                 <div className="flex items-center gap-2 mb-6">
                                     <span className="text-2xl">⭐</span>
