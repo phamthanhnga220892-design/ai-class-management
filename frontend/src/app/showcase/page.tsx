@@ -267,7 +267,7 @@ export default function ShowcasePage() {
     const [loading, setLoading] = useState(true);
     const [selectedStudent, setSelectedStudent] = useState('');
     const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
-    const productsRef = useRef<HTMLElement>(null);
+    const productsRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         fetchShowcase();
@@ -336,21 +336,6 @@ export default function ShowcasePage() {
                     </div>
                 ) : (
                     <>
-                        {/* Featured Section */}
-                        {data?.featured && data.featured.length > 0 && (
-                            <section className="mb-12">
-                                <div className="flex items-center gap-2 mb-6">
-                                    <span className="text-2xl">⭐</span>
-                                    <h2 className="text-2xl font-bold">Nổi bật</h2>
-                                </div>
-                                <div className="space-y-4">
-                                    {data.featured.map((product) => (
-                                        <FeaturedCard key={product._id} product={product} onClick={() => setSelectedProduct(product)} />
-                                    ))}
-                                </div>
-                            </section>
-                        )}
-
                         {/* Student Filter */}
                         {data?.students && data.students.length > 0 && (
                             <div className="mb-8">
@@ -383,25 +368,50 @@ export default function ShowcasePage() {
                             </div>
                         )}
 
-                        {/* All Products Section */}
-                        <section ref={productsRef}>
-                            <div className="flex items-center mb-6">
-                                <h2 className="text-2xl font-bold">Tất cả sản phẩm</h2>
-                            </div>
-
-                            {data?.others && data.others.length > 0 ? (
-                                <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                                    {data.others.map((product) => (
-                                        <ProductCard key={product._id} product={product} onClick={() => setSelectedProduct(product)} />
-                                    ))}
-                                </div>
-                            ) : (
-                                <div className="text-center py-16 bg-card rounded-2xl border border-border">
-                                    <div className="text-5xl mb-4">📦</div>
-                                    <p className="text-muted-foreground">Chưa có sản phẩm nào</p>
-                                </div>
+                        {/* Kết quả: nổi bật + còn lại nằm chung một khối để khi lọc theo
+                            học viên, cuộn tới đây vẫn thấy phần nổi bật của học viên đó. */}
+                        <div ref={productsRef}>
+                            {/* Featured Section */}
+                            {data?.featured && data.featured.length > 0 && (
+                                <section className="mb-12">
+                                    <div className="flex items-center gap-2 mb-6">
+                                        <span className="text-2xl">⭐</span>
+                                        <h2 className="text-2xl font-bold">Nổi bật</h2>
+                                    </div>
+                                    <div className="space-y-4">
+                                        {data.featured.map((product) => (
+                                            <FeaturedCard key={product._id} product={product} onClick={() => setSelectedProduct(product)} />
+                                        ))}
+                                    </div>
+                                </section>
                             )}
-                        </section>
+
+                            {/* All Products Section */}
+                            <section>
+                                <div className="flex items-center mb-6">
+                                    <h2 className="text-2xl font-bold">
+                                        {data?.featured && data.featured.length > 0 ? 'Sản phẩm khác' : 'Tất cả sản phẩm'}
+                                    </h2>
+                                </div>
+
+                                {data?.others && data.others.length > 0 ? (
+                                    <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                                        {data.others.map((product) => (
+                                            <ProductCard key={product._id} product={product} onClick={() => setSelectedProduct(product)} />
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <div className="text-center py-16 bg-card rounded-2xl border border-border">
+                                        <div className="text-5xl mb-4">📦</div>
+                                        <p className="text-muted-foreground">
+                                            {data?.featured && data.featured.length > 0
+                                                ? 'Không còn sản phẩm nào khác'
+                                                : 'Chưa có sản phẩm nào'}
+                                        </p>
+                                    </div>
+                                )}
+                            </section>
+                        </div>
                     </>
                 )}
             </div>
